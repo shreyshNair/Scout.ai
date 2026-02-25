@@ -223,9 +223,12 @@ function Navbar({ onSignInClick, onGetStartedClick }: { onSignInClick: () => voi
         scrollTo(id);
     };
 
-    const glassClass = scrolled
-        ? "bg-white/92 dark:bg-slate-900/92 backdrop-blur-xl border-slate-200/80 dark:border-slate-700/80 shadow-xl shadow-slate-200/40 dark:shadow-black/50"
-        : "bg-white/85 dark:bg-slate-900/75 backdrop-blur-xl border-slate-200/60 dark:border-slate-700/40 shadow-lg shadow-slate-100/60 dark:shadow-black/30";
+    // True glassmorphism: transparent + heavy blur + luminous border
+    const glassBase = "backdrop-blur-2xl border border-white/20 dark:border-white/10";
+    const glassLight = scrolled
+        ? `bg-white/20 dark:bg-slate-900/25 shadow-2xl shadow-blue-900/10 dark:shadow-black/40 ${glassBase}`
+        : `bg-white/10 dark:bg-slate-900/15 shadow-lg shadow-blue-900/5 dark:shadow-black/20 ${glassBase}`;
+    const glassDrawer = "bg-white/25 dark:bg-slate-900/30 backdrop-blur-2xl border border-white/25 dark:border-white/10 shadow-2xl shadow-blue-900/10 dark:shadow-black/50";
 
     return (
         <motion.div
@@ -234,11 +237,15 @@ function Navbar({ onSignInClick, onGetStartedClick }: { onSignInClick: () => voi
             className="fixed top-4 inset-x-0 z-50 flex flex-col items-center px-4 pointer-events-none gap-2">
 
             {/* ── Pill bar ── */}
-            <nav className={`pointer-events-auto w-full max-w-3xl flex items-center gap-4 px-5 py-2.5 rounded-full border transition-all duration-300 ${glassClass}`}>
+            <nav className={`pointer-events-auto relative w-full max-w-3xl flex items-center gap-4 px-5 py-2.5 rounded-full transition-all duration-500 ${glassLight}`}>
+
+                {/* Inner top-shimmer: the luminous highlight edge */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-full"
+                    style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 40%, rgba(147,197,253,0.5) 60%, transparent 100%)" }} />
 
                 {/* Logo */}
                 <div className="flex items-center gap-2 shrink-0">
-                    <div className="h-7 w-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30">
+                    <div className="h-7 w-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/40">
                         <Sparkles className="w-3.5 h-3.5 text-white" />
                     </div>
                     <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">Scout.ai</span>
@@ -248,7 +255,7 @@ function Navbar({ onSignInClick, onGetStartedClick }: { onSignInClick: () => voi
                 <div className="hidden md:flex items-center gap-0.5 flex-1">
                     {SECTIONS.map(s => (
                         <button key={s} onClick={() => scrollTo(s)}
-                            className="px-3 py-1.5 rounded-full text-sm font-semibold transition-colors capitalize text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
+                            className="px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 capitalize text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10">
                             {s}
                         </button>
                     ))}
@@ -263,11 +270,11 @@ function Navbar({ onSignInClick, onGetStartedClick }: { onSignInClick: () => voi
 
                     {/* Desktop-only auth buttons */}
                     <button onClick={onSignInClick}
-                        className="hidden md:block text-sm font-bold px-3 py-1.5 rounded-full transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
+                        className="hidden md:block text-sm font-bold px-3 py-1.5 rounded-full transition-all duration-200 text-slate-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10">
                         Sign in
                     </button>
                     <button onClick={onGetStartedClick}
-                        className="hidden md:flex group items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/35 hover:-translate-y-0.5 active:translate-y-0">
+                        className="hidden md:flex group items-center gap-1.5 bg-blue-600/90 hover:bg-blue-600 backdrop-blur-sm text-white text-sm font-bold px-4 py-2 rounded-full transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 active:translate-y-0">
                         Get started
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </button>
@@ -275,7 +282,7 @@ function Navbar({ onSignInClick, onGetStartedClick }: { onSignInClick: () => voi
                     {/* Hamburger — mobile only */}
                     <button
                         onClick={() => setMobileOpen(o => !o)}
-                        className="md:hidden flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        className="md:hidden flex items-center justify-center h-8 w-8 rounded-full bg-white/30 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-white/50 dark:hover:bg-white/20 transition-all duration-200 backdrop-blur-sm border border-white/30 dark:border-white/10"
                         aria-label="Toggle menu">
                         <AnimatePresence mode="wait" initial={false}>
                             {mobileOpen
@@ -300,25 +307,29 @@ function Navbar({ onSignInClick, onGetStartedClick }: { onSignInClick: () => voi
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.97 }}
                         transition={{ duration: 0.22, ease: "easeOut" }}
-                        className={`pointer-events-auto w-full max-w-3xl rounded-3xl border px-5 py-5 flex flex-col gap-3 ${glassClass}`}>
+                        className={`pointer-events-auto relative w-full max-w-3xl rounded-3xl px-5 py-5 flex flex-col gap-2 ${glassDrawer}`}>
+
+                        {/* Top shimmer on drawer too */}
+                        <div className="pointer-events-none absolute inset-x-4 top-0 h-px rounded-full"
+                            style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)" }} />
 
                         {/* Nav links */}
                         {SECTIONS.map(s => (
                             <button key={s} onClick={() => handleMobileNav(s)}
-                                className="w-full text-left px-4 py-3 rounded-2xl capitalize font-semibold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm">
+                                className="w-full text-left px-4 py-3 rounded-2xl capitalize font-semibold text-slate-700 dark:text-slate-200 hover:bg-white/50 dark:hover:bg-white/10 hover:text-blue-700 dark:hover:text-blue-300 transition-all duration-200 text-sm">
                                 {s}
                             </button>
                         ))}
 
-                        <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                        <div className="border-t border-white/20 dark:border-white/10 my-1" />
 
                         {/* Auth CTAs */}
                         <button onClick={() => { setMobileOpen(false); onSignInClick(); }}
-                            className="w-full px-4 py-3 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left">
+                            className="w-full px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-white/50 dark:hover:bg-white/10 transition-all duration-200 text-left">
                             Sign in
                         </button>
                         <button onClick={() => { setMobileOpen(false); onGetStartedClick(); }}
-                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm px-4 py-3.5 rounded-2xl transition-all shadow-lg shadow-blue-500/25">
+                            className="w-full flex items-center justify-center gap-2 bg-blue-600/90 hover:bg-blue-600 backdrop-blur-sm text-white font-black text-sm px-4 py-3.5 rounded-2xl transition-all shadow-lg shadow-blue-500/30">
                             Get started
                             <ArrowRight className="w-4 h-4" />
                         </button>
@@ -590,7 +601,7 @@ export default function LandingPage() {
                         </motion.p>
 
                         <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-3">
-                            <button onClick={openAuth}
+                            <button onClick={() => openAuth()}
                                 className="group flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm px-7 py-3.5 rounded-full shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
                                 Start for free
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -789,7 +800,7 @@ export default function LandingPage() {
                         </div>
                         <h2 className="text-4xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Ready to find your next unicorn?</h2>
                         <p className="text-slate-500 dark:text-slate-400 mb-8 text-lg">Join 200+ VC teams using Scout.ai to discover the startups that matter.</p>
-                        <button onClick={openAuth}
+                        <button onClick={() => openAuth()}
                             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black px-8 py-4 rounded-full shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
                             Launch Scout.ai free
                             <ArrowRight className="w-4 h-4" />
