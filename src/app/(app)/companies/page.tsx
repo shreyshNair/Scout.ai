@@ -225,7 +225,7 @@ function CompaniesTableSection({ companies }: { companies: any[] }) {
                     <h2 className="text-xl font-black tracking-tight">Active Coverage</h2>
                     <div className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                        Showing {companies.length > 0 ? startIndex + 1 : 0}–{endIndex} of {companies.length} Identifiers
+                        Showing {companies.length > 0 ? startIndex + 1 : 0}–{endIndex} of {companies.length} companies
                     </span>
                 </div>
             </div>

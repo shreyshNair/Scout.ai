@@ -200,7 +200,7 @@ export default function ListsPage() {
                                     <div className="flex items-center gap-4 mt-4">
                                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50">
                                             <Users className="w-3.5 h-3.5 text-slate-400" />
-                                            <span className="text-xs font-bold">{listCompanies.length} Identifiers</span>
+                                            <span className="text-xs font-bold">{listCompanies.length} companies</span>
                                         </div>
                                         <div className="text-xs font-medium text-muted-foreground">
                                             Initialized <span className="text-slate-900 dark:text-slate-100 font-bold">{new Date(selectedList.createdAt).toLocaleDateString()}</span>
