@@ -20,6 +20,10 @@ import {
     MoreHorizontal,
     Filter,
     Zap,
+    Plus,
+    Trash2,
+    X,
+    PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -91,19 +95,33 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: React.ElementType; 
     );
 }
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-const pipelineTasks = [
-    { company: "Mistral AI", action: "Review pitch deck", priority: "high" as const, done: false },
-    { company: "ElevenLabs", action: "Send term sheet", priority: "high" as const, done: false },
-    { company: "Runway", action: "Schedule partner call", priority: "med" as const, done: true },
-    { company: "PostHog", action: "Due diligence checklist", priority: "low" as const, done: false },
-    { company: "Cal.com", action: "Initial outreach email", priority: "low" as const, done: true },
+interface Task {
+    id: string;
+    company: string;
+    action: string;
+    priority: "high" | "med" | "low";
+    done: boolean;
+}
+
+interface Reminder {
+    id: string;
+    time: string;
+    label: string;
+    priority: "high" | "med" | "low";
+}
+
+const INITIAL_TASKS: Task[] = [
+    { id: "1", company: "Mistral AI", action: "Review pitch deck", priority: "high", done: false },
+    { id: "2", company: "ElevenLabs", action: "Send term sheet", priority: "high", done: false },
+    { id: "3", company: "Runway", action: "Schedule partner call", priority: "med", done: true },
+    { id: "4", company: "PostHog", action: "Due diligence checklist", priority: "low", done: false },
+    { id: "5", company: "Cal.com", action: "Initial outreach email", priority: "low", done: true },
 ];
 
-const reminders = [
-    { time: "10:00 AM", label: "Partner meeting — AI/ML round", priority: "high" as const },
-    { time: "01:00 PM", label: "Term sheet call: ElevenLabs", priority: "high" as const },
-    { time: "04:15 PM", label: "Update deal memo: Runway", priority: "med" as const },
+const INITIAL_REMINDERS: Reminder[] = [
+    { id: "1", time: "10:00 AM", label: "Partner meeting — AI/ML round", priority: "high" },
+    { id: "2", time: "01:00 PM", label: "Term sheet call: ElevenLabs", priority: "high" },
+    { id: "3", time: "04:15 PM", label: "Update deal memo: Runway", priority: "med" },
 ];
 
 const recentCompanies = mockCompanies.slice(0, 5);
@@ -111,6 +129,41 @@ const recentCompanies = mockCompanies.slice(0, 5);
 // ═════════════════════════════════════════════════════════════════════════════
 export default function DashboardPage() {
     const { profile } = useUser();
+    const [tasks, setTasks] = React.useState<Task[]>([]);
+    const [reminders, setReminders] = React.useState<Reminder[]>([]);
+    const [isAddingTask, setIsAddingTask] = React.useState(false);
+    const [isAddingReminder, setIsAddingReminder] = React.useState(false);
+    const [editingTask, setEditingTask] = React.useState<Task | null>(null);
+    const [editingReminder, setEditingReminder] = React.useState<Reminder | null>(null);
+
+    // Form states
+    const [newTask, setNewTask] = React.useState<{ company: string; action: string; priority: "high" | "med" | "low" }>({ company: "", action: "", priority: "med" });
+    const [newReminder, setNewReminder] = React.useState<{ time: string; ampm: "AM" | "PM"; label: string; priority: "high" | "med" | "low" }>({ time: "09:00", ampm: "AM", label: "", priority: "med" });
+
+    // Load from localStorage
+    React.useEffect(() => {
+        const savedTasks = localStorage.getItem("scout_tasks");
+        const savedReminders = localStorage.getItem("scout_reminders");
+        if (savedTasks) setTasks(JSON.parse(savedTasks));
+        else setTasks(INITIAL_TASKS);
+
+        if (savedReminders) setReminders(JSON.parse(savedReminders));
+        else setReminders(INITIAL_REMINDERS);
+    }, []);
+
+    // Save to localStorage
+    React.useEffect(() => {
+        if (tasks.length > 0 || localStorage.getItem("scout_tasks")) {
+            localStorage.setItem("scout_tasks", JSON.stringify(tasks));
+        }
+    }, [tasks]);
+
+    React.useEffect(() => {
+        if (reminders.length > 0 || localStorage.getItem("scout_reminders")) {
+            localStorage.setItem("scout_reminders", JSON.stringify(reminders));
+        }
+    }, [reminders]);
+
     const totalCompanies = mockCompanies.length;
     const stages = [...new Set(mockCompanies.map((c) => c.stage))].length;
     const sectors = [...new Set(mockCompanies.map((c) => c.sector))].length;
@@ -120,6 +173,55 @@ export default function DashboardPage() {
         if (h < 12) return "Good morning";
         if (h < 17) return "Good afternoon";
         return "Good evening";
+    };
+
+    const addTask = () => {
+        if (!newTask.action) return;
+        const task: Task = {
+            id: Math.random().toString(36).substr(2, 9),
+            ...newTask,
+            done: false
+        };
+        setTasks(prev => [task, ...prev]);
+        setNewTask({ company: "", action: "", priority: "med" });
+        setIsAddingTask(false);
+    };
+
+    const updateTask = () => {
+        if (!editingTask || !editingTask.action) return;
+        setTasks(prev => prev.map(t => t.id === editingTask.id ? editingTask : t));
+        setEditingTask(null);
+    };
+
+    const deleteTask = (id: string) => {
+        setTasks(prev => prev.filter(t => t.id !== id));
+    };
+
+    const toggleTask = (id: string) => {
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
+    };
+
+    const addReminder = () => {
+        if (!newReminder.label) return;
+        const reminder: Reminder = {
+            id: Math.random().toString(36).substr(2, 9),
+            time: `${newReminder.time} ${newReminder.ampm}`,
+            label: newReminder.label,
+            priority: newReminder.priority
+        };
+        setReminders(prev => [...prev, reminder].sort((a, b) => a.time.localeCompare(b.time)));
+        setNewReminder({ time: "09:00", ampm: "AM", label: "", priority: "med" });
+        setIsAddingReminder(false);
+    };
+
+    const updateReminder = () => {
+        if (!editingReminder || !editingReminder.label) return;
+        setReminders(prev => prev.map(r => r.id === editingReminder.id ? editingReminder : r).sort((a, b) => a.time.localeCompare(b.time)));
+        setEditingReminder(null);
+    };
+
+    const deleteReminder = (id: string) => {
+        setReminders(prev => prev.filter(r => r.id !== id));
     };
 
     return (
@@ -235,56 +337,92 @@ export default function DashboardPage() {
 
                     {/* Pipeline tasks */}
                     <motion.div variants={fadeUp} initial="hidden" animate="show"
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Today's Tasks</span>
-                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{pipelineTasks.filter(t => t.done).length}/{pipelineTasks.length}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Today's Tasks</span>
+                                <button onClick={() => setIsAddingTask(true)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-600 transition-colors">
+                                    <PlusCircle className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{tasks.filter(t => t.done).length}/{tasks.length}</span>
                         </div>
                         <div className="space-y-2">
-                            {pipelineTasks.map((t, i) => (
-                                <div key={i} className="flex items-start gap-2.5">
-                                    {t.done
-                                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                                        : <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 mt-0.5 shrink-0" />}
+                            {tasks.map((t) => (
+                                <div key={t.id} className="flex items-start gap-2.5 group">
+                                    <button onClick={() => toggleTask(t.id)} className="shrink-0">
+                                        {t.done
+                                            ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5" />
+                                            : <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 mt-0.5" />}
+                                    </button>
                                     <div className="flex-1 min-w-0">
                                         <p className={`text-xs font-semibold truncate ${t.done ? "line-through text-slate-400 dark:text-slate-600" : "text-slate-800 dark:text-slate-200"}`}>{t.action}</p>
                                         <p className="text-[10px] text-slate-400">{t.company}</p>
                                     </div>
-                                    <PriBadge p={t.priority} />
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <PriBadge p={t.priority} />
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                            <button onClick={() => setEditingTask(t)} className="p-1 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+                                                <MoreHorizontal className="w-3 h-3" />
+                                            </button>
+                                            <button onClick={() => deleteTask(t.id)} className="p-1 rounded-md hover:bg-red-50 text-red-400 hover:text-red-500">
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
+                            {tasks.length === 0 && (
+                                <p className="text-center py-4 text-xs text-slate-400 italic">No tasks for today. Chill out!</p>
+                            )}
                         </div>
                         <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                             <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                                <div className="h-full bg-blue-500 rounded-full"
-                                    style={{ width: `${(pipelineTasks.filter(t => t.done).length / pipelineTasks.length) * 100}%` }} />
+                                <div className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                                    style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.done).length / tasks.length) * 100 : 0}%` }} />
                             </div>
                         </div>
                     </motion.div>
 
                     {/* Reminders */}
                     <motion.div variants={fadeUp} initial="hidden" animate="show"
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-1.5">
                                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                                 <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Reminders</span>
                             </div>
-                            <button className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Manage</button>
+                            <button onClick={() => setIsAddingReminder(true)} className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Manage</button>
                         </div>
                         <div className="space-y-2">
-                            {reminders.map((r, i) => (
-                                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                    <div className="shrink-0 text-center">
+                            {reminders.map((r) => (
+                                <div key={r.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 group">
+                                    <div className="shrink-0 text-center w-12 border-r border-slate-200 dark:border-slate-700 pr-2">
                                         <p className="text-[10px] font-black text-slate-900 dark:text-white">
                                             {r.time.split(" ")[0]}
                                         </p>
-                                        <p className="text-[9px] text-slate-400">{r.time.split(" ")[1]}</p>
+                                        <p className="text-[9px] text-slate-400 uppercase font-bold">{r.time.split(" ")[1]}</p>
                                     </div>
                                     <p className="flex-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 leading-tight min-w-0 truncate">{r.label}</p>
-                                    <PriBadge p={r.priority} />
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <PriBadge p={r.priority} />
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                            <button onClick={() => {
+                                                const [time, ampm] = r.time.split(" ");
+                                                setEditingReminder({ ...r, time, ampm: ampm as "AM" | "PM" });
+                                            }} className="p-1 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+                                                <MoreHorizontal className="w-3 h-3" />
+                                            </button>
+                                            <button onClick={() => deleteReminder(r.id)} className="p-1 rounded-md hover:bg-red-50 text-red-400 hover:text-red-500">
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
+                            {reminders.length === 0 && (
+                                <p className="text-center py-4 text-xs text-slate-400 italic">No reminders. All clear!</p>
+                            )}
                         </div>
                     </motion.div>
 
@@ -320,6 +458,103 @@ export default function DashboardPage() {
                     </motion.div>
                 </div>
             </div>
+            {/* ── Modals ── */}
+            {/* Add/Edit Task Modal */}
+            {(isAddingTask || editingTask) && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-900 rounded-[28px] shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-sm overflow-hidden text-slate-900 dark:text-white">
+                        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <h3 className="font-black">{editingTask ? "Edit Task" : "Add New Task"}</h3>
+                            <button onClick={() => { setIsAddingTask(false); setEditingTask(null); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><X className="w-4 h-4" /></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Action</label>
+                                <input type="text"
+                                    value={editingTask ? editingTask.action : newTask.action}
+                                    onChange={e => editingTask ? setEditingTask({ ...editingTask, action: e.target.value }) : setNewTask(n => ({ ...n, action: e.target.value }))}
+                                    placeholder="Review pitch deck..."
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Company (Optional)</label>
+                                <input type="text"
+                                    value={editingTask ? editingTask.company : newTask.company}
+                                    onChange={e => editingTask ? setEditingTask({ ...editingTask, company: e.target.value }) : setNewTask(n => ({ ...n, company: e.target.value }))}
+                                    placeholder="e.g. OpenAI"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Priority</label>
+                                <div className="flex gap-2">
+                                    {(["low", "med", "high"] as const).map(p => (
+                                        <button key={p}
+                                            onClick={() => editingTask ? setEditingTask({ ...editingTask, priority: p }) : setNewTask(n => ({ ...n, priority: p }))}
+                                            className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${(editingTask ? editingTask.priority : newTask.priority) === p ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200"}`}>{p}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            <button onClick={editingTask ? updateTask : addTask} className="w-full py-3.5 mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-xl shadow-blue-500/20 transition-all">
+                                {editingTask ? "Update Task" : "Create Task"}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Add/Edit Reminder Modal */}
+            {(isAddingReminder || editingReminder) && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-900 rounded-[28px] shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-sm overflow-hidden text-slate-900 dark:text-white">
+                        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <h3 className="font-black">{editingReminder ? "Edit Reminder" : "Add Reminder"}</h3>
+                            <button onClick={() => { setIsAddingReminder(false); setEditingReminder(null); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><X className="w-4 h-4" /></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Reminder Note</label>
+                                <input type="text"
+                                    value={editingReminder ? editingReminder.label : newReminder.label}
+                                    onChange={e => editingReminder ? setEditingReminder({ ...editingReminder, label: e.target.value }) : setNewReminder(r => ({ ...r, label: e.target.value }))}
+                                    placeholder="Partner meeting..."
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="flex-1 space-y-1">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Time</label>
+                                    <input type="time"
+                                        value={editingReminder ? editingReminder.time : newReminder.time}
+                                        onChange={e => editingReminder ? setEditingReminder({ ...editingReminder, time: e.target.value }) : setNewReminder(r => ({ ...r, time: e.target.value }))}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Period</label>
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                                        {["AM", "PM"].map(p => (
+                                            <button key={p}
+                                                onClick={() => editingReminder ? setEditingReminder({ ...editingReminder, ampm: p as any }) : setNewReminder(r => ({ ...r, ampm: p as any }))}
+                                                className={`px-3 py-2 rounded-lg text-[10px] font-bold transition-all ${(editingReminder ? editingReminder.ampm : newReminder.ampm) === p ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500"}`}>{p}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Priority</label>
+                                <div className="flex gap-2">
+                                    {(["low", "med", "high"] as const).map(p => (
+                                        <button key={p}
+                                            onClick={() => editingReminder ? setEditingReminder({ ...editingReminder, priority: p }) : setNewReminder(r => ({ ...r, priority: p }))}
+                                            className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${(editingReminder ? editingReminder.priority : newReminder.priority) === p ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200"}`}>{p}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            <button onClick={editingReminder ? updateReminder : addReminder} className="w-full py-3.5 mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-xl shadow-blue-500/20 transition-all">
+                                {editingReminder ? "Update Reminder" : "Create Reminder"}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }
