@@ -54,7 +54,7 @@ export function EnrichmentPanel({ companyId, website }: EnrichmentPanelProps) {
                             <Sparkles className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black tracking-tight">Signal Enrichment</h3>
+                            <h3 className="text-xl font-black tracking-tight">Live Enrichment</h3>
                             <p className="text-xs text-muted-foreground font-medium">Powered by Anthropic Intelligence</p>
                         </div>
                     </div>
@@ -73,7 +73,7 @@ export function EnrichmentPanel({ companyId, website }: EnrichmentPanelProps) {
                             className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 font-bold px-8 h-12 gap-2"
                         >
                             <Sparkles className="w-4 h-4" />
-                            Run Analysis
+                            Enrich
                         </Button>
                     </div>
                 )}

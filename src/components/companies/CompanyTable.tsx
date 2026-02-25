@@ -100,7 +100,7 @@ export function CompanyTable({ companies }: CompanyTableProps) {
                                 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors ml-auto"
                                 onClick={() => requestSort('score')}
                             >
-                                Intelligence
+                                Score
                                 <ArrowUpDown className="h-3 w-3" />
                             </button>
                         </TableHead>
@@ -157,7 +157,7 @@ export function CompanyTable({ companies }: CompanyTableProps) {
                                     <div className="flex items-center justify-end gap-3">
                                         <div className={cn("flex flex-col items-end gap-1 px-3 py-1 rounded-xl border transition-colors", getScoreStyles(company.score))}>
                                             <span className="text-lg font-black leading-none">{company.score}</span>
-                                            <span className="text-[8px] font-bold uppercase tracking-widest opacity-70">Signal</span>
+                                            <span className="text-[8px] font-bold uppercase tracking-widest opacity-70">Score</span>
                                         </div>
                                         <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
                                     </div>

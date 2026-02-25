@@ -65,5 +65,6 @@ export interface SavedSearch {
   name: string;
   query: string;
   filters: FilterState;
+  urlParams: string;
   savedAt: string;
 }

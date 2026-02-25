@@ -20,10 +20,7 @@ export default function SavedSearchesPage() {
     const router = useRouter();
 
     const handleReRun = (search: any) => {
-        // In a real app, we'd serialize filters to URL search params
-        // For now, we'll just go to companies page. 
-        // Ideally: router.push(`/companies?q=${search.query}&filters=${JSON.stringify(search.filters)}`)
-        router.push('/companies');
+        router.push(`/companies${search.urlParams || ''}`);
     };
 
     return (
@@ -67,19 +64,42 @@ export default function SavedSearchesPage() {
                                     )}
                                     <div className="flex flex-wrap gap-1.5">
                                         {search.filters.stage.length > 0 && (
-                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                                {search.filters.stage.length} Stages
-                                            </Badge>
+                                            <div className="flex flex-wrap gap-1">
+                                                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 w-full mb-1">Stages</span>
+                                                {search.filters.stage.map((s: string) => (
+                                                    <Badge key={s} variant="secondary" className="text-[9px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-100">
+                                                        {s}
+                                                    </Badge>
+                                                ))}
+                                            </div>
                                         )}
                                         {search.filters.sector.length > 0 && (
-                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                                {search.filters.sector.length} Sectors
-                                            </Badge>
+                                            <div className="flex flex-wrap gap-1">
+                                                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 w-full mb-1">Sectors</span>
+                                                {search.filters.sector.map((s: string) => (
+                                                    <Badge key={s} variant="secondary" className="text-[9px] px-1.5 py-0 bg-emerald-50 text-emerald-700 border-emerald-100">
+                                                        {s}
+                                                    </Badge>
+                                                ))}
+                                            </div>
                                         )}
                                         {search.filters.geography.length > 0 && (
-                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                                {search.filters.geography.length} Geographies
-                                            </Badge>
+                                            <div className="flex flex-wrap gap-1">
+                                                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 w-full mb-1">Geographies</span>
+                                                {search.filters.geography.map((s: string) => (
+                                                    <Badge key={s} variant="secondary" className="text-[9px] px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-100">
+                                                        {s}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {search.filters.headcount !== 'All' && (
+                                            <div className="flex flex-wrap gap-1">
+                                                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 w-full mb-1">Size</span>
+                                                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-100">
+                                                    {search.filters.headcount}
+                                                </Badge>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

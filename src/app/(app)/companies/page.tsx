@@ -4,6 +4,7 @@ import * as React from "react";
 import { CompanyTable } from "@/components/companies/CompanyTable";
 import { CompanyFilters } from "@/components/companies/CompanyFilters";
 import { useSearch } from "@/hooks/useSearch";
+import { useSearchParams } from "next/navigation";
 import { mockCompanies } from "@/lib/mock-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,8 @@ import { SavedSearch } from "@/lib/types";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
-export default function CompaniesPage() {
+function CompaniesContent() {
+    const searchParams = useSearchParams();
     const { filters, setFilters, filteredCompanies, activeFilterCount } = useSearch(mockCompanies, {
         stage: [],
         sector: [],
@@ -32,17 +34,44 @@ export default function CompaniesPage() {
         query: ''
     });
 
+    // Hydrate filters from URL
+    React.useEffect(() => {
+        const q = searchParams.get('q');
+        const stage = searchParams.get('stage');
+        const sector = searchParams.get('sector');
+        const geo = searchParams.get('geo');
+        const size = searchParams.get('size');
+
+        if (q || stage || sector || geo || size) {
+            setFilters({
+                query: q || '',
+                stage: stage ? stage.split(',') : [],
+                sector: sector ? sector.split(',') : [],
+                geography: geo ? geo.split(',') : [],
+                headcount: size || 'All'
+            });
+        }
+    }, []); // Run only on mount to initialize
+
     const [saveDialogOpen, setSaveDialogOpen] = React.useState(false);
     const [searchName, setSearchName] = React.useState("");
 
     const handleSaveSearch = () => {
         if (!searchName) return;
 
+        const params = new URLSearchParams();
+        if (filters.query) params.set('q', filters.query);
+        if (filters.stage.length > 0) params.set('stage', filters.stage.join(','));
+        if (filters.sector.length > 0) params.set('sector', filters.sector.join(','));
+        if (filters.geography.length > 0) params.set('geo', filters.geography.join(','));
+        if (filters.headcount !== 'All') params.set('size', filters.headcount);
+
         const newSavedSearch: SavedSearch = {
             id: Math.random().toString(36).substring(7),
             name: searchName,
             query: filters.query,
-            filters: filters,
+            filters: { ...filters },
+            urlParams: params.toString() ? '?' + params.toString() : '',
             savedAt: new Date().toISOString()
         };
 
@@ -168,19 +197,78 @@ export default function CompaniesPage() {
 
                 {/* Results Area */}
                 <div className="lg:col-span-3 space-y-6">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-black tracking-tight">Active Coverage</h2>
-                            <div className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                                {filteredCompanies.length} Identifiers
-                            </span>
-                        </div>
-                    </div>
-
-                    <CompanyTable companies={filteredCompanies} />
+                    <CompaniesTableSection companies={filteredCompanies} />
                 </div>
             </div>
         </div>
+    );
+}
+
+function CompaniesTableSection({ companies }: { companies: any[] }) {
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const pageSize = 25;
+
+    // Reset to page 1 when filters change (companies list changes)
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [companies]);
+
+    const totalPages = Math.ceil(companies.length / pageSize) || 1;
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, companies.length);
+    const paginatedCompanies = companies.slice(startIndex, endIndex);
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-black tracking-tight">Active Coverage</h2>
+                    <div className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        Showing {companies.length > 0 ? startIndex + 1 : 0}–{endIndex} of {companies.length} Identifiers
+                    </span>
+                </div>
+            </div>
+
+            <CompanyTable companies={paginatedCompanies} />
+
+            {/* Pagination Controls */}
+            {companies.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest order-2 sm:order-1">
+                        Page {currentPage} of {totalPages}
+                    </div>
+
+                    <div className="flex items-center gap-2 order-1 sm:order-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="rounded-xl h-9 px-4 font-bold text-[10px] uppercase tracking-widest border-slate-200 dark:border-slate-800 disabled:opacity-30"
+                        >
+                            ← Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="rounded-xl h-9 px-4 font-bold text-[10px] uppercase tracking-widest border-slate-200 dark:border-slate-800 disabled:opacity-30"
+                        >
+                            Next →
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function CompaniesPage() {
+    return (
+        <React.Suspense fallback={<div className="p-8 text-center text-slate-500 font-bold">Synchronizing Intelligence...</div>}>
+            <CompaniesContent />
+        </React.Suspense>
     );
 }

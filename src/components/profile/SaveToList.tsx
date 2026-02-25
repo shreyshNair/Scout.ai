@@ -37,9 +37,9 @@ export function SaveToList({ companyId }: SaveToListProps) {
                     : [...list.companyIds, companyId];
 
                 if (hasCompany) {
-                    toast.success(`Analysis archived from ${list.name}`);
+                    toast.success(`Removed from ${list.name}`);
                 } else {
-                    toast.success(`Analysis indexed into ${list.name}`);
+                    toast.success(`Added to ${list.name}`);
                 }
 
                 return { ...list, companyIds: newCompanyIds };
@@ -52,7 +52,7 @@ export function SaveToList({ companyId }: SaveToListProps) {
     };
 
     const createNewList = () => {
-        const name = prompt("Intelligence Repository Name:");
+        const name = prompt("List Name:");
         if (name) {
             const newList: List = {
                 id: Math.random().toString(36).substring(7),
@@ -63,7 +63,7 @@ export function SaveToList({ companyId }: SaveToListProps) {
             const updatedLists = [...lists, newList];
             setLists(updatedLists);
             saveLists(updatedLists);
-            toast.success(`Intelligence repository "${name}" initialized`);
+            toast.success(`List "${name}" created`);
         }
     };
 
@@ -80,12 +80,12 @@ export function SaveToList({ companyId }: SaveToListProps) {
                     )}
                 >
                     <Bookmark className={cn("w-3.5 h-3.5 transition-colors", isCompanyInAnyList && "fill-current")} />
-                    {isCompanyInAnyList ? "Indexed" : "Index Signal"}
+                    {isCompanyInAnyList ? "Saved" : "Save to List"}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 rounded-2xl border-slate-200 dark:border-slate-800 shadow-2xl p-2">
                 <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-3 py-2">
-                    Active Repositories
+                    Active Lists
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 mx-2" />
                 <div className="max-h-[200px] overflow-y-auto py-1">
@@ -110,7 +110,7 @@ export function SaveToList({ companyId }: SaveToListProps) {
                     ) : (
                         <div className="px-3 py-4 text-center opacity-40">
                             <ListIcon className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest">No repositories found</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest">No lists found</p>
                         </div>
                     )}
                 </div>
@@ -120,7 +120,7 @@ export function SaveToList({ companyId }: SaveToListProps) {
                     className="rounded-xl mt-1 flex items-center gap-2 px-3 py-2.5 cursor-pointer text-blue-600 focus:text-blue-700 focus:bg-blue-50 dark:focus:bg-blue-900/20 font-bold text-xs"
                 >
                     <FolderPlus className="w-4 h-4" />
-                    New Repository
+                    New List
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

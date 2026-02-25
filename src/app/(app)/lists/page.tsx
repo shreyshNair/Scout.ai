@@ -44,7 +44,7 @@ export default function ListsPage() {
     }, [selectedList]);
 
     const handleCreateList = () => {
-        const name = prompt("Intelligence Repository Name:");
+        const name = prompt("List Name:");
         if (!name) return;
 
         const newList: List = {
@@ -58,12 +58,12 @@ export default function ListsPage() {
         setLists(updated);
         saveLists(updated);
         setSelectedListId(newList.id);
-        toast.success(`Repository "${name}" initialized`);
+        toast.success(`List "${name}" created`);
     };
 
     const handleDeleteList = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm("Are you sure you want to decommission this repository?")) return;
+        if (!confirm("Are you sure you want to delete this list?")) return;
 
         const updated = lists.filter(l => l.id !== id);
         setLists(updated);
@@ -71,7 +71,7 @@ export default function ListsPage() {
         if (selectedListId === id) {
             setSelectedListId(updated.length > 0 ? updated[0].id : null);
         }
-        toast.info("Repository decommissioned");
+        toast.info("List deleted");
     };
 
     const handleExportCSV = () => {
@@ -88,7 +88,7 @@ export default function ListsPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        toast.success("Intelligence report exported");
+        toast.success("List exported");
     };
 
     return (
@@ -97,8 +97,8 @@ export default function ListsPage() {
             <div className="w-80 border-r border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl flex flex-col shrink-0">
                 <div className="p-8 border-b border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
                     <div>
-                        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 mb-1">Repositories</h2>
-                        <span className="text-xl font-black tracking-tight">Archives</span>
+                        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 mb-1">Lists</h2>
+                        <span className="text-xl font-black tracking-tight">Lists</span>
                     </div>
                     <Button
                         onClick={handleCreateList}
@@ -166,11 +166,11 @@ export default function ListsPage() {
                             <div className="w-16 h-16 rounded-3xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-6 border border-slate-100 dark:border-slate-800">
                                 <ListTodo className="w-8 h-8" />
                             </div>
-                            <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-300">No active repositories</p>
-                            <p className="text-xs text-muted-foreground mt-2 max-w-[180px]">Initialize your first archive to start indexing signals.</p>
+                            <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-300">No active lists</p>
+                            <p className="text-xs text-muted-foreground mt-2 max-w-[180px]">Create your first list to start indexing companies.</p>
                             <Button onClick={handleCreateList} variant="outline" size="sm" className="mt-6 rounded-xl border-slate-200 dark:border-slate-800 h-10 px-6 font-bold text-[10px] uppercase tracking-widest">
                                 <Plus className="w-4 h-4 mr-2" />
-                                Initialize
+                                Create New List
                             </Button>
                         </div>
                     )}
@@ -192,7 +192,7 @@ export default function ListsPage() {
                                 <div>
                                     <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
                                         <Sparkles className="w-4 h-4" />
-                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Repository Active</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">List Active</span>
                                     </div>
                                     <h1 className="text-5xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-500 dark:from-white dark:to-slate-400">
                                         {selectedList.name}
@@ -211,7 +211,7 @@ export default function ListsPage() {
                                 <div className="flex items-center gap-3">
                                     <Button onClick={handleExportCSV} variant="outline" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft h-12 px-8 font-bold text-xs uppercase tracking-wider gap-3">
                                         <Download className="w-4 h-4 text-blue-600" />
-                                        Export Intelligence
+                                        Export List
                                     </Button>
                                 </div>
                             </div>
@@ -232,9 +232,9 @@ export default function ListsPage() {
                                     <div className="w-20 h-20 rounded-[28px] bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-200 dark:text-slate-700 mb-8 border border-slate-100/50 dark:border-slate-800">
                                         <Search className="w-10 h-10" />
                                     </div>
-                                    <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">Archive Empty</h3>
+                                    <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">List Empty</h3>
                                     <p className="text-muted-foreground max-w-sm mt-3 font-medium">
-                                        No intelligence identifies have been indexed into this repository yet.
+                                        No companies have been added to this list yet.
                                     </p>
                                     <Button variant="default" className="mt-10 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black px-10 h-14 shadow-lg shadow-blue-500/20" asChild>
                                         <a href="/companies">Analyze Market</a>
@@ -246,8 +246,8 @@ export default function ListsPage() {
                         <div className="h-full flex items-center justify-center text-center px-6">
                             <div className="max-w-xs space-y-4 opacity-40">
                                 <ListTodo className="w-12 h-12 mx-auto text-slate-400" />
-                                <p className="text-sm font-bold uppercase tracking-[0.2em]">Select Repository</p>
-                                <p className="text-xs font-medium">Choose an archive from the sidebar to view synchronized signals.</p>
+                                <p className="text-sm font-bold uppercase tracking-[0.2em]">Select List</p>
+                                <p className="text-xs font-medium">Choose a list from the sidebar to view companies.</p>
                             </div>
                         </div>
                     )}
