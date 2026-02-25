@@ -37,10 +37,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     // Load from localStorage on mount
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem("scout_user_profile");
-            if (saved) setProfile(JSON.parse(saved));
-        } catch { }
+        const load = () => {
+            try {
+                const saved = localStorage.getItem("scout_user_profile");
+                if (saved) setProfile(p => ({ ...p, ...JSON.parse(saved) }));
+            } catch { }
+        };
+        load(); // initial read
+
+        // Re-read whenever AuthModal (or any tab) writes a new profile
+        window.addEventListener("scout_profile_updated", load);
+        return () => window.removeEventListener("scout_profile_updated", load);
     }, []);
 
     const updateProfile = (updates: Partial<UserProfile>) => {

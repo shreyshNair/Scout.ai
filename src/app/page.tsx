@@ -7,7 +7,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import {
     Sparkles, ArrowRight, Building2, TrendingUp, Zap, Shield,
     Globe, ChevronRight, Check, Star, BarChart3, Search, Bell,
-    X, Eye, EyeOff, Mail, Lock, AlertCircle, Sun, Moon,
+    X, Eye, EyeOff, Mail, Lock, AlertCircle, Sun, Moon, User, Menu,
 } from "lucide-react";
 
 // ── Section IDs ────────────────────────────────────────────────────────────────
@@ -53,8 +53,11 @@ function ThemeToggle({ muted = false }: { muted?: boolean }) {
 }
 
 // ── Auth Modal ─────────────────────────────────────────────────────────────────
-function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-    const [mode, setMode] = React.useState<"signin" | "signup">("signin");
+function AuthModal({ onClose, onSuccess, defaultMode = "signup" }: {
+    onClose: () => void; onSuccess: () => void; defaultMode?: "signin" | "signup";
+}) {
+    const [mode, setMode] = React.useState<"signin" | "signup">(defaultMode);
+    const [name, setName]         = React.useState("");
     const [email, setEmail]       = React.useState("");
     const [password, setPassword] = React.useState("");
     const [showPw, setShowPw]     = React.useState(false);
@@ -62,6 +65,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
     const [loading, setLoading]   = React.useState(false);
 
     const validate = () => {
+        if (mode === "signup" && name.trim().length < 2) return "Please enter your full name.";
         if (!email.includes("@")) return "Enter a valid email address.";
         if (password.length < 6)  return "Password must be at least 6 characters.";
         return "";
@@ -73,6 +77,19 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
         if (err) { setError(err); return; }
         setLoading(true); setError("");
         await new Promise(r => setTimeout(r, 850));
+        // Persist user profile so the dashboard can greet by name
+        if (mode === "signup" && name.trim()) {
+            try {
+                const existing = JSON.parse(localStorage.getItem("scout_user_profile") || "{}");
+                localStorage.setItem("scout_user_profile", JSON.stringify({
+                    ...existing,
+                    name: name.trim(),
+                    email: email.trim(),
+                }));
+                // Notify UserContext to re-read immediately (before route change)
+                window.dispatchEvent(new CustomEvent("scout_profile_updated"));
+            } catch { }
+        }
         signIn(); setLoading(false); onSuccess();
     };
 
@@ -88,8 +105,8 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
                 transition={{ duration: 0.32, ease }}
                 className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
 
-                {/* Header — teal-green gradient */}
-                <div className="px-8 pt-8 pb-6 bg-gradient-to-br from-teal-600 via-emerald-600 to-teal-700 text-white relative">
+                {/* Header — blue gradient (matches dashboard palette) */}
+                <div className="px-8 pt-8 pb-6 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white relative">
                     <button onClick={onClose}
                         className="absolute top-4 right-4 h-8 w-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
                         <X className="w-4 h-4" />
@@ -98,10 +115,10 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
                         <Sparkles className="w-5 h-5" />
                     </div>
                     <h2 className="text-2xl font-black tracking-tight">
-                        {mode === "signin" ? "Welcome back" : "Create account"}
+                        {mode === "signin" ? "Welcome back" : "Create your account"}
                     </h2>
-                    <p className="text-teal-100 text-sm mt-1">
-                        {mode === "signin" ? "Sign in to access your pipeline" : "Start your 14-day free trial"}
+                    <p className="text-blue-200 text-sm mt-1">
+                        {mode === "signin" ? "Sign in to access your pipeline" : "Start your 14-day free trial — no card needed"}
                     </p>
                 </div>
 
@@ -111,6 +128,20 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
                             <AlertCircle className="w-4 h-4 shrink-0" />{error}
                         </div>
                     )}
+
+                    {/* Name — signup only */}
+                    {mode === "signup" && (
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Full Name</label>
+                            <div className="relative">
+                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input type="text" value={name} onChange={e => setName(e.target.value)}
+                                    placeholder="Alex Johnson" autoFocus
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                            </div>
+                        </div>
+                    )}
+
                     {/* Email */}
                     <div className="space-y-1">
                         <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</label>
@@ -118,9 +149,10 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
                             <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                                 placeholder="you@fund.com" required
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all" />
+                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
                         </div>
                     </div>
+
                     {/* Password */}
                     <div className="space-y-1">
                         <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Password</label>
@@ -128,19 +160,19 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
                             <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
                                 placeholder="••••••••" required
-                                className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all" />
+                                className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
                             <button type="button" onClick={() => setShowPw(v => !v)}
                                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
                         {mode === "signin" && (
-                            <button type="button" className="text-xs text-teal-600 dark:text-teal-400 hover:underline mt-1 block text-right">Forgot password?</button>
+                            <button type="button" className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 block text-right">Forgot password?</button>
                         )}
                     </div>
 
                     <button type="submit" disabled={loading}
-                        className="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white font-black text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-teal-500/25">
+                        className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-500/25">
                         {loading
                             ? <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             : <>{mode === "signin" ? "Sign in" : "Create account"} <ArrowRight className="w-4 h-4" /></>}
@@ -154,8 +186,8 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
                     <p className="text-center text-sm text-slate-500 dark:text-slate-400">
                         {mode === "signin" ? "New to Scout.ai? " : "Already have an account? "}
                         <button type="button"
-                            onClick={() => { setMode(m => m === "signin" ? "signup" : "signin"); setError(""); }}
-                            className="text-teal-600 dark:text-teal-400 font-bold hover:underline">
+                            onClick={() => { setMode(m => m === "signin" ? "signup" : "signin"); setError(""); setName(""); }}
+                            className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
                             {mode === "signin" ? "Create account" : "Sign in"}
                         </button>
                     </p>
@@ -167,46 +199,53 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
 
 // ── Smart Navbar ────────────────────────────────────────────────────────────────
 // Centered pill · glassmorph · hides on scroll-down, shows on scroll-up
-function Navbar({ onAuthClick }: { onAuthClick: () => void }) {
+// Mobile: hamburger → slide-down drawer
+function Navbar({ onSignInClick, onGetStartedClick }: { onSignInClick: () => void; onGetStartedClick: () => void }) {
     const [visible, setVisible] = React.useState(true);
     const [scrolled, setScrolled] = React.useState(false);
+    const [mobileOpen, setMobileOpen] = React.useState(false);
     const lastY = React.useRef(0);
 
     React.useEffect(() => {
         const onScroll = () => {
             const y = window.scrollY;
             setScrolled(y > 24);
-            if (y > lastY.current + 8)       setVisible(false);
-            else if (y < lastY.current - 4)  setVisible(true);
+            if (y > lastY.current + 8) { setVisible(false); setMobileOpen(false); }
+            else if (y < lastY.current - 4) setVisible(true);
             lastY.current = y;
         };
         window.addEventListener("scroll", onScroll, { passive: true });
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
+    const handleMobileNav = (id: string) => {
+        setMobileOpen(false);
+        scrollTo(id);
+    };
+
+    const glassClass = scrolled
+        ? "bg-white/92 dark:bg-slate-900/92 backdrop-blur-xl border-slate-200/80 dark:border-slate-700/80 shadow-xl shadow-slate-200/40 dark:shadow-black/50"
+        : "bg-white/85 dark:bg-slate-900/75 backdrop-blur-xl border-slate-200/60 dark:border-slate-700/40 shadow-lg shadow-slate-100/60 dark:shadow-black/30";
+
     return (
         <motion.div
-            animate={{ y: visible ? 0 : -88, opacity: visible ? 1 : 0 }}
+            animate={{ y: visible ? 0 : -120, opacity: visible ? 1 : 0 }}
             transition={{ duration: 0.32, ease }}
-            className="fixed top-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
-            <nav className={`pointer-events-auto flex items-center gap-5 px-5 py-2.5 rounded-full border transition-all duration-300 ${
-                scrolled
-                    ? "bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-slate-200/80 dark:border-slate-700/80 shadow-xl shadow-slate-200/40 dark:shadow-black/50"
-                    : "bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border-slate-200/60 dark:border-slate-700/40 shadow-lg shadow-slate-100/60 dark:shadow-black/30"
-            }`}>
+            className="fixed top-4 inset-x-0 z-50 flex flex-col items-center px-4 pointer-events-none gap-2">
+
+            {/* ── Pill bar ── */}
+            <nav className={`pointer-events-auto w-full max-w-3xl flex items-center gap-4 px-5 py-2.5 rounded-full border transition-all duration-300 ${glassClass}`}>
 
                 {/* Logo */}
                 <div className="flex items-center gap-2 shrink-0">
                     <div className="h-7 w-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30">
                         <Sparkles className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
-                        Scout.ai
-                    </span>
+                    <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">Scout.ai</span>
                 </div>
 
-                {/* Nav links */}
-                <div className="hidden md:flex items-center gap-0.5">
+                {/* Desktop nav links */}
+                <div className="hidden md:flex items-center gap-0.5 flex-1">
                     {SECTIONS.map(s => (
                         <button key={s} onClick={() => scrollTo(s)}
                             className="px-3 py-1.5 rounded-full text-sm font-semibold transition-colors capitalize text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -215,22 +254,77 @@ function Navbar({ onAuthClick }: { onAuthClick: () => void }) {
                     ))}
                 </div>
 
-                {/* Theme toggle + CTAs */}
+                {/* Spacer on mobile */}
+                <div className="flex-1 md:hidden" />
+
+                {/* Right controls */}
                 <div className="flex items-center gap-2 shrink-0">
-                    {/* Theme toggle — muted because navbar bg is always light glass */}
                     <ThemeToggle muted={true} />
 
-                    <button onClick={onAuthClick}
-                        className="text-sm font-bold px-3 py-1.5 rounded-full transition-colors hidden sm:block text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
+                    {/* Desktop-only auth buttons */}
+                    <button onClick={onSignInClick}
+                        className="hidden md:block text-sm font-bold px-3 py-1.5 rounded-full transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
                         Sign in
                     </button>
-                    <button onClick={onAuthClick}
-                        className="group flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/35 hover:-translate-y-0.5 active:translate-y-0">
+                    <button onClick={onGetStartedClick}
+                        className="hidden md:flex group items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/35 hover:-translate-y-0.5 active:translate-y-0">
                         Get started
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </button>
+
+                    {/* Hamburger — mobile only */}
+                    <button
+                        onClick={() => setMobileOpen(o => !o)}
+                        className="md:hidden flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        aria-label="Toggle menu">
+                        <AnimatePresence mode="wait" initial={false}>
+                            {mobileOpen
+                                ? <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.18 }}>
+                                    <X className="w-4 h-4" />
+                                  </motion.span>
+                                : <motion.span key="m" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.18 }}>
+                                    <Menu className="w-4 h-4" />
+                                  </motion.span>
+                            }
+                        </AnimatePresence>
+                    </button>
                 </div>
             </nav>
+
+            {/* ── Mobile drawer ── */}
+            <AnimatePresence>
+                {mobileOpen && (
+                    <motion.div
+                        key="mobile-menu"
+                        initial={{ opacity: 0, y: -12, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
+                        className={`pointer-events-auto w-full max-w-3xl rounded-3xl border px-5 py-5 flex flex-col gap-3 ${glassClass}`}>
+
+                        {/* Nav links */}
+                        {SECTIONS.map(s => (
+                            <button key={s} onClick={() => handleMobileNav(s)}
+                                className="w-full text-left px-4 py-3 rounded-2xl capitalize font-semibold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400 transition-colors text-sm">
+                                {s}
+                            </button>
+                        ))}
+
+                        <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+
+                        {/* Auth CTAs */}
+                        <button onClick={() => { setMobileOpen(false); onSignInClick(); }}
+                            className="w-full px-4 py-3 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left">
+                            Sign in
+                        </button>
+                        <button onClick={() => { setMobileOpen(false); onGetStartedClick(); }}
+                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm px-4 py-3.5 rounded-2xl transition-all shadow-lg shadow-blue-500/25">
+                            Get started
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
@@ -267,7 +361,7 @@ function FeatureCard({ icon: Icon, title, desc, color, i, onAuth }: {
             <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">{title}</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-5">{desc}</p>
             <button onClick={onAuth}
-                className="flex items-center gap-1 text-xs font-bold text-teal-600 dark:text-teal-400 opacity-0 group-hover:opacity-100 transition-all group-hover:gap-2">
+                className="flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-all group-hover:gap-2">
                 Try it free <ChevronRight className="w-3 h-3" />
             </button>
         </motion.div>
@@ -287,12 +381,12 @@ function PricingCard({ plan, price, period, features, highlight, cta, i, onAuth 
                     : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
             }`}>
             {highlight && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-teal-500/30 whitespace-nowrap">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-blue-500/30 whitespace-nowrap">
                     ✦ Most Popular
                 </div>
             )}
             <div>
-                <p className={`text-[11px] font-black uppercase tracking-widest mb-3 ${highlight ? "text-teal-400" : "text-slate-400"}`}>{plan}</p>
+                <p className={`text-[11px] font-black uppercase tracking-widest mb-3 ${highlight ? "text-blue-400" : "text-slate-400"}`}>{plan}</p>
                 <div className="flex items-end gap-1">
                     <span className="text-5xl font-black tracking-tighter">{price}</span>
                     <span className={`text-sm mb-2 ${highlight ? "text-slate-400" : "text-slate-400"}`}>/ {period}</span>
@@ -301,8 +395,8 @@ function PricingCard({ plan, price, period, features, highlight, cta, i, onAuth 
             <ul className="space-y-3 flex-1">
                 {features.map(f => (
                     <li key={f} className="flex items-start gap-2.5 text-sm">
-                        <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${highlight ? "bg-teal-500/20" : "bg-teal-50 dark:bg-teal-500/10"}`}>
-                            <Check className={`w-3 h-3 ${highlight ? "text-teal-400" : "text-teal-600 dark:text-teal-400"}`} />
+                        <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${highlight ? "bg-blue-500/20" : "bg-blue-50 dark:bg-blue-500/10"}`}>
+                            <Check className={`w-3 h-3 ${highlight ? "text-blue-400" : "text-blue-600 dark:text-blue-400"}`} />
                         </div>
                         <span className={highlight ? "text-slate-300" : "text-slate-600 dark:text-slate-300"}>{f}</span>
                     </li>
@@ -311,7 +405,7 @@ function PricingCard({ plan, price, period, features, highlight, cta, i, onAuth 
             <button onClick={onAuth}
                 className={`w-full py-3.5 rounded-2xl text-sm font-black text-center transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 ${
                     highlight
-                        ? "bg-teal-500 text-white hover:bg-teal-400 shadow-lg shadow-teal-500/30"
+                        ? "bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/30"
                         : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100"
                 }`}>
                 {cta}
@@ -323,47 +417,86 @@ function PricingCard({ plan, price, period, features, highlight, cta, i, onAuth 
 // ── Mock dashboard card ─────────────────────────────────────────────────────────
 function MockDashCard() {
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden w-full max-w-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden w-full max-w-[480px]">
             {/* Window chrome */}
-            <div className="flex items-center gap-1.5 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60">
-                <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
-                <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                <div className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                <span className="ml-2 text-[10px] text-slate-400 font-mono">scout.ai · dashboard</span>
+            <div className="flex items-center gap-2 px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60">
+                <div className="h-3 w-3 rounded-full bg-red-400" />
+                <div className="h-3 w-3 rounded-full bg-amber-400" />
+                <div className="h-3 w-3 rounded-full bg-emerald-400" />
+                <span className="ml-2 text-xs text-slate-400 font-mono">scout.ai · dashboard</span>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-6 space-y-5">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Pipeline Velocity</p>
-                        <p className="text-3xl font-black text-slate-900 dark:text-white mt-0.5">78<span className="text-base text-slate-400">%</span></p>
+                        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Pipeline Velocity</p>
+                        <p className="text-4xl font-black text-slate-900 dark:text-white mt-1">78<span className="text-xl text-slate-400">%</span></p>
                     </div>
-                    <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">+12% ↑</span>
+                    <span className="text-sm font-black px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">+12% ↑</span>
                 </div>
                 {[
                     { name: "Mistral AI",  stage: "Series B", score: 96, hex: "#2563eb" },
                     { name: "ElevenLabs", stage: "Series B", score: 94, hex: "#1d4ed8" },
                     { name: "Runway",      stage: "Series C", score: 97, hex: "#3b82f6" },
                 ].map(c => (
-                    <div key={c.name} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-blue-50/60 dark:hover:bg-blue-900/20 transition-colors cursor-pointer group">
-                        <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.hex + "22" }}>
-                            <span className="text-[9px] font-black" style={{ color: c.hex }}>{c.name.slice(0, 2).toUpperCase()}</span>
+                    <div key={c.name} className="flex items-center gap-4 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-blue-50/60 dark:hover:bg-blue-900/20 transition-colors cursor-pointer group">
+                        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: c.hex + "22" }}>
+                            <span className="text-xs font-black" style={{ color: c.hex }}>{c.name.slice(0, 2).toUpperCase()}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{c.name}</p>
-                            <p className="text-[10px] text-slate-400">{c.stage}</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{c.name}</p>
+                            <p className="text-xs text-slate-400">{c.stage}</p>
                         </div>
-                        <span className="text-xs font-black" style={{ color: c.hex }}>{c.score}</span>
+                        <span className="text-sm font-black" style={{ color: c.hex }}>{c.score}</span>
                     </div>
                 ))}
                 <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] text-slate-400 font-semibold">Weekly target</span>
-                        <span className="text-[10px] font-black text-blue-600 dark:text-blue-400">78%</span>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-slate-400 font-semibold">Weekly target</span>
+                        <span className="text-xs font-black text-blue-600 dark:text-blue-400">78%</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                         <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400" style={{ width: "78%" }} />
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Floating deal-flow chart card ───────────────────────────────────────────────
+function FloatingChartCard() {
+    const bars = [38, 55, 44, 68, 52, 74, 61, 80, 70, 92];
+    return (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-700 p-4 w-[210px]">
+            <div className="flex items-center justify-between mb-3">
+                <div>
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Deal Flow</p>
+                    <p className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+                        +34%
+                        <span className="text-xs text-slate-400 font-medium ml-1">/ mo</span>
+                    </p>
+                </div>
+                <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+            </div>
+            {/* SVG bar chart */}
+            <svg viewBox="0 0 100 40" className="w-full h-12 overflow-visible" preserveAspectRatio="none">
+                {bars.map((h, i) => {
+                    const x = i * 11;
+                    const barH = (h / 100) * 36;
+                    const isLast = i === bars.length - 1;
+                    return (
+                        <rect key={i} x={x} y={40 - barH} width={8} height={barH} rx={2}
+                            fill={isLast ? "#2563eb" : i >= bars.length - 3 ? "#93c5fd" : "#e2e8f0"}
+                            className="dark:[&:not(:last-child)]:fill-slate-700"
+                        />
+                    );
+                })}
+            </svg>
+            <div className="flex items-center gap-1.5 mt-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                <p className="text-[10px] text-slate-400">Oct — Jan 2026 · AI-tracked</p>
             </div>
         </div>
     );
@@ -380,7 +513,11 @@ export default function LandingPage() {
         if (isAuthed()) router.replace("/dashboard");
     }, [router]);
 
-    const openAuth    = React.useCallback(() => setShowAuth(true), []);
+    const [authMode, setAuthMode] = React.useState<"signin" | "signup">("signup");
+    const openAuth = React.useCallback((mode: "signin" | "signup" = "signup") => {
+        setAuthMode(mode);
+        setShowAuth(true);
+    }, []);
     const handleSuccess = React.useCallback(() => { setShowAuth(false); router.push("/dashboard"); }, [router]);
 
     const features = [
@@ -405,10 +542,10 @@ export default function LandingPage() {
         <div className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white min-h-screen overflow-x-hidden">
 
             <AnimatePresence>
-                {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={handleSuccess} />}
+                {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={handleSuccess} defaultMode={authMode} />}
             </AnimatePresence>
 
-            <Navbar onAuthClick={openAuth} />
+            <Navbar onSignInClick={() => openAuth("signin")} onGetStartedClick={() => openAuth("signup")} />
 
             {/* ── HERO ──────────────────────────────────────────────────────── */}
             {/* Light mode: soft white + green gradient blobs (CatalyzeAI-inspired) */}
@@ -428,7 +565,7 @@ export default function LandingPage() {
                     style={{ backgroundImage: "radial-gradient(circle, #2563eb 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
 
                 <motion.div style={{ y: heroY }}
-                    className="relative container mx-auto px-6 md:px-12 grid lg:grid-cols-2 gap-14 items-center">
+                    className="relative container mx-auto px-6 md:px-12 grid lg:grid-cols-[1fr_1.15fr] gap-8 xl:gap-12 items-center">
 
                     {/* Left */}
                     <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8">
@@ -474,35 +611,46 @@ export default function LandingPage() {
                         </motion.div>
                     </motion.div>
 
-                    {/* Right: floating mock UI */}
+                    {/* Right: floating mock UI + deal-flow chart — all badges overlap main card */}
                     <motion.div
                         initial={{ opacity: 0, x: 48 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.85, ease, delay: 0.25 }}
-                        className="relative flex justify-center lg:justify-end">
+                        className="relative flex items-center justify-center pl-0 lg:pl-6" style={{ minHeight: 520 }}>
 
-                        <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}>
+                        {/* Main dashboard card — centered z-0 */}
+                        <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+                            className="relative z-0">
                             <MockDashCard />
                         </motion.div>
 
-                        {/* Signal badge */}
+                        {/* FloatingChartCard — top-right, overlapping MockDashCard corner */}
+                        <motion.div animate={{ y: [0, -7, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+                            className="absolute -top-12 -right-8 xl:-right-14 z-20">
+                            <FloatingChartCard />
+                        </motion.div>
+
+                        {/* Signal badge — top-left, overlapping MockDashCard left edge */}
                         <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-                            className="absolute -left-8 top-6 bg-white dark:bg-slate-900 rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 border border-slate-100 dark:border-slate-700">
-                            <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            className="absolute top-8 -left-8 xl:-left-14 z-20 bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-blue-950/10 px-5 py-4 flex items-center gap-4 border border-slate-100 dark:border-slate-700">
+                            <div className="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
-                                <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">New signal</p>
-                                <p className="text-xs font-black text-slate-900 dark:text-white">Runway raised $141M</p>
+                                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">New signal</p>
+                                <p className="text-sm font-black text-slate-900 dark:text-white">Runway raised $141M</p>
                             </div>
                         </motion.div>
 
-                        {/* AI score badge */}
+                        {/* AI Score badge — bottom-right, overlapping MockDashCard right edge */}
+                        {/* Light: white card with blue shadow. Dark: dark navy */}
                         <motion.div animate={{ y: [0, -9, 0] }} transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
-                            className="absolute -right-4 bottom-10 bg-slate-900 dark:bg-blue-900/80 border border-slate-800 dark:border-blue-700 rounded-2xl shadow-xl px-4 py-3 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-blue-400" />
+                            className="absolute -bottom-8 -right-8 xl:-right-14 z-20 bg-white dark:bg-blue-950 border border-blue-100 dark:border-blue-800 rounded-2xl shadow-xl shadow-blue-950/15 px-5 py-4 flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-xl bg-blue-600 dark:bg-blue-700 flex items-center justify-center shrink-0">
+                                <Sparkles className="w-4 h-4 text-white" />
+                            </div>
                             <div>
-                                <p className="text-[9px] text-slate-400 dark:text-blue-300 font-semibold uppercase tracking-wider">AI Score</p>
-                                <p className="text-sm font-black text-white">97 · Strong Buy</p>
+                                <p className="text-[10px] text-slate-400 dark:text-blue-300 font-semibold uppercase tracking-wider">AI Score</p>
+                                <p className="text-base font-black text-slate-900 dark:text-white">97 · Strong Buy</p>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -545,24 +693,26 @@ export default function LandingPage() {
             </section>
 
             {/* ── STATS BAND ─────────────────────────────────────────────────── */}
-            <section className="py-24 relative overflow-hidden">
-                {/* Dark navy background with subtle teal overlay */}
-                <div className="absolute inset-0 bg-slate-900 dark:bg-slate-950" />
-                <div className="absolute inset-0 opacity-10"
+            <section className="py-24 relative overflow-hidden bg-white dark:bg-slate-950">
+                {/* Subtle blue radial glow — visible in both modes */}
+                <div className="absolute inset-0 opacity-[0.06] dark:opacity-10"
                     style={{ backgroundImage: "radial-gradient(ellipse 70% 80% at 20% 50%, #2563eb 0%, transparent 60%)" }} />
-                <div className="absolute inset-0 opacity-[0.04]"
-                    style={{ backgroundImage: "radial-gradient(circle, #60a5fa 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+                <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"
+                    style={{ backgroundImage: "radial-gradient(circle, #2563eb 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
-                <div className="relative max-w-5xl mx-auto px-6 md:px-12 grid md:grid-cols-3 gap-8 text-center text-white">
+                <div className="relative max-w-5xl mx-auto px-6 md:px-12 grid md:grid-cols-3 gap-8 text-center">
                     {[
-                        { num: "20K+", label: "Startups in database",     sub: "Updated daily" },
-                        { num: "2.4M", label: "Funding signals tracked",  sub: "Across 8 data sources" },
-                        { num: "97%",  label: "Analyst satisfaction",     sub: "Across 200+ teams" },
+                        { num: "20K+", label: "Startups in database",    sub: "Updated daily" },
+                        { num: "2.4M", label: "Funding signals tracked", sub: "Across 8 data sources" },
+                        { num: "97%",  label: "Analyst satisfaction",    sub: "Across 200+ teams" },
                     ].map((s, i) => (
                         <motion.div key={s.label} variants={fadeUp} custom={i} initial="hidden" whileInView="show" viewport={{ once: true }}>
-                            <p className="text-6xl font-black tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-b from-white to-blue-300">{s.num}</p>
-                            <p className="text-slate-200 font-bold text-base mb-1">{s.label}</p>
-                            <p className="text-slate-500 text-sm">{s.sub}</p>
+                            <p className="text-6xl font-black tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-b from-blue-700 to-indigo-500 dark:from-white dark:to-blue-300"
+                                style={{ filter: "drop-shadow(0 4px 24px #2563eb30)" }}>
+                                {s.num}
+                            </p>
+                            <p className="text-slate-700 dark:text-slate-200 font-bold text-base mb-1">{s.label}</p>
+                            <p className="text-slate-400 dark:text-slate-500 text-sm">{s.sub}</p>
                         </motion.div>
                     ))}
                 </div>
@@ -624,27 +774,27 @@ export default function LandingPage() {
                 </motion.div>
             </section>
 
-            {/* ── CTA BANNER ─────────────────────────────────────────────────── */}
+            {/* ── CTA BANNER ──────────────────────────────────────────────────── */}
             <section className="py-20 px-6 md:px-12 bg-slate-50 dark:bg-slate-900/50">
                 <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
-                    className="max-w-3xl mx-auto text-center bg-slate-900 dark:bg-slate-800 rounded-3xl p-14 text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden">
-                    {/* Blue glow */}
-                    <div className="absolute inset-0 opacity-15"
+                    className="max-w-3xl mx-auto text-center bg-white dark:bg-slate-900 rounded-3xl p-14 shadow-2xl shadow-blue-950/10 dark:shadow-black/40 border border-blue-100 dark:border-slate-800 relative overflow-hidden">
+                    {/* Blue glow accent — subtle in light mode */}
+                    <div className="absolute inset-0 opacity-[0.06] dark:opacity-15"
                         style={{ backgroundImage: "radial-gradient(ellipse 60% 50% at 80% 20%, #2563eb 0%, transparent 50%)" }} />
-                    <div className="absolute inset-0 opacity-[0.05]"
-                        style={{ backgroundImage: "radial-gradient(circle, #60a5fa 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+                    <div className="absolute inset-0 opacity-[0.025] dark:opacity-[0.05]"
+                        style={{ backgroundImage: "radial-gradient(circle, #2563eb 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
                     <div className="relative">
-                        <div className="h-14 w-14 mx-auto mb-6 rounded-2xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
-                            <Sparkles className="w-7 h-7 text-blue-400" />
+                        <div className="h-14 w-14 mx-auto mb-6 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                            <Sparkles className="w-7 h-7 text-white" />
                         </div>
-                        <h2 className="text-4xl font-black tracking-tight mb-4">Ready to find your next unicorn?</h2>
-                        <p className="text-slate-400 mb-8 text-lg">Join 200+ VC teams using Scout.ai to discover the startups that matter.</p>
+                        <h2 className="text-4xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Ready to find your next unicorn?</h2>
+                        <p className="text-slate-500 dark:text-slate-400 mb-8 text-lg">Join 200+ VC teams using Scout.ai to discover the startups that matter.</p>
                         <button onClick={openAuth}
-                            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-black px-8 py-4 rounded-full shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
+                            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black px-8 py-4 rounded-full shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
                             Launch Scout.ai free
                             <ArrowRight className="w-4 h-4" />
                         </button>
-                        <p className="text-slate-600 dark:text-slate-500 text-sm mt-4">No credit card · 14-day trial · Cancel anytime</p>
+                        <p className="text-slate-400 dark:text-slate-500 text-sm mt-4">No credit card · 14-day trial · Cancel anytime</p>
                     </div>
                 </motion.div>
             </section>
