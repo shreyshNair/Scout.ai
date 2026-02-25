@@ -23,33 +23,43 @@ Scout.ai is a high-performance, thesis-driven startup discovery and enrichment p
 - **State Management**: React Context API
 - **Theming**: `next-themes` (Light mode optimized)
 
-## 🛠️ Getting Started
+## Setup
 
 ### Prerequisites
+- Node.js 18+
+- An Anthropic API key (get one at console.anthropic.com)
 
-- Node.js 18.x or later
-- npm or yarn
+### Local Development
+```bash
+git clone https://github.com/shreyshNair/Scout.ai.git
+cd Scout.ai
+# If you are using VS Code, you can open the folder with:
+# code .
+npm install
+cp .env.example .env.local
+# Open .env.local and add your ANTHROPIC_API_KEY
+npm run dev
+```
 
-### Installation
+### Environment Variables
+| Variable | Required | Description |
+|---|---|---|
+| ANTHROPIC_API_KEY | Yes | Anthropic API key for live enrichment |
 
-1. **Clone the repository:**
-   ```bash
-   [git clone https://github.com/shreyshNair/Scout.ai.git)
-   cd Scout.ai
-   ```
+### Deployment (Vercel)
+1. Push repo to GitHub
+2. Connect to Vercel
+3. Add `ANTHROPIC_API_KEY` in Vercel → Project → Settings → Environment Variables
+4. Redeploy
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
-
-4. **Open in browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000) to see the application.
+### How Enrichment Works
+1. User clicks "Enrich" on a company profile
+2. Browser POSTs to `/api/enrich` (server-side Next.js route)
+3. Server fetches the company's public website using Cheerio
+4. Scraped text is sent to Claude API for extraction
+5. Summary, bullets, keywords, signals, and sources are returned
+6. Result is cached in `localStorage` for that company
+Note: API key is never exposed to the browser.
 
 ## 📁 Project Structure
 
