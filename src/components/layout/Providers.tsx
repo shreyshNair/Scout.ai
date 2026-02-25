@@ -5,13 +5,16 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { UserProvider } from "@/context/UserContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
-            <SidebarProvider>
-                {children}
-            </SidebarProvider>
+            <UserProvider>
+                <SidebarProvider>
+                    {children}
+                </SidebarProvider>
+            </UserProvider>
         </NextThemesProvider>
     );
 }

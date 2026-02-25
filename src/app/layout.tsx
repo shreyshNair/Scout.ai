@@ -4,13 +4,23 @@ import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/layout/Providers";
-import { AppShell } from "@/components/layout/AppShell";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Scout.ai - Precision Intelligence Interface",
-  description: "A thesis-driven company discovery and enrichment platform for VC analysts.",
+  title: "Scout.ai — VC Intelligence Platform",
+  description: "A thesis-driven company discovery and enrichment platform for VC analysts. Find, evaluate, and track the most promising startups with AI-powered insights.",
+  keywords: ["venture capital", "startup discovery", "VC analytics", "deal flow", "portfolio management"],
+  openGraph: {
+    title: "Scout.ai — VC Intelligence Platform",
+    description: "Discover and track the most promising startups with AI-powered signals and enrichment.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -20,11 +30,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased bg-background text-foreground transition-colors duration-300`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground transition-colors duration-300`}>
         <Providers>
           <TooltipProvider>
-            <AppShell>{children}</AppShell>
-            <Toaster position="bottom-right" richColors />
+            {children}
+            <Toaster position="bottom-right" richColors closeButton />
           </TooltipProvider>
         </Providers>
       </body>
