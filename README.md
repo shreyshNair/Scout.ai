@@ -2,7 +2,8 @@
 
 Scout.ai is a high-performance, thesis-driven startup discovery and enrichment platform designed for modern Venture Capital teams. It streamlines the deal flow process by combining real-time signals, AI-powered insights, and a sleek, high-utility interface.
 
-![Scout.ai Dashboard Mockup](public/dashboard-preview.png) *(Note: Add your actual dashboard screenshot here)*
+<img width="1870" height="1146" alt="image" src="https://github.com/user-attachments/assets/67b16c73-5d96-4fa6-b5cd-2b85121b44a7" />
+
 
 ## ✨ Key Features
 
@@ -33,8 +34,8 @@ Scout.ai is a high-performance, thesis-driven startup discovery and enrichment p
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/shreyshNair/ROOTS-ROUTES.git
-   cd ROOTS-ROUTES
+   [git clone https://github.com/shreyshNair/Scout.ai.git)
+   cd Scout.ai
    ```
 
 2. **Install dependencies:**
