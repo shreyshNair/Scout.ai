@@ -4,7 +4,9 @@ import * as cheerio from 'cheerio';
 
 export async function POST(req: NextRequest) {
     try {
-        const { url, companyId } = await req.json();
+        const body = await req.json();
+        const url = body.url || body.website;
+        const { companyId } = body;
 
         if (!url || !url.startsWith('http')) {
             return NextResponse.json({ error: 'Invalid URL provided' }, { status: 400 });
@@ -43,10 +45,6 @@ export async function POST(req: NextRequest) {
         // Step 4 — Call Anthropic Claude API
         const apiKey = process.env.ANTHROPIC_API_KEY;
         if (!apiKey) {
-            // For demo purposes, we'll return mock data if No API key is found
-            // but in production, this should be an error.
-            // return NextResponse.json({ error: 'Anthropic API key not configured' }, { status: 500 });
-
             console.warn("No Anthropic API key found. Returning mock enrichment data.");
             return NextResponse.json(getMockEnrichment(url));
         }
@@ -62,6 +60,9 @@ export async function POST(req: NextRequest) {
         
 Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
 {
+  "oneLiner": "A concise market position statement",
+  "competitors": ["competitor1", "competitor2", "competitor3"],
+  "strategicValue": "A short paragraph on why this company is strategically valuable or their unique advantage",
   "summary": "1-2 sentence overview",
   "whatTheyDo": ["bullet 1", "bullet 2", "bullet 3"],
   "keywords": ["kw1", "kw2", "kw3", "kw4", "kw5"],
@@ -69,9 +70,6 @@ Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
     { "type": "careers", "label": "Careers page found — actively hiring", "positive": true }
   ]
 }
-
-Signal types to detect: careers (hiring page), blog (active blog), changelog (product updates), 
-pricing (pricing page exists), enterprise (enterprise/sales mentions), api (developer API).
 
 Website content:
 ---
@@ -99,8 +97,12 @@ ${scrapedText}
 }
 
 function getMockEnrichment(url: string) {
+    const hostname = new URL(url).hostname;
     return {
-        summary: `This company provides innovative solutions as seen on ${new URL(url).hostname}. They focus on delivering high-value products to their target market.`,
+        oneLiner: `Market leader in modern infrastructure for the ${hostname} ecosystem.`,
+        competitors: ["Competitor A", "Competitor B", "Competitor C"],
+        strategicValue: "Strong network effects and high switching costs due to integration depth. Exceptional team with previous exits in the sector.",
+        summary: `This company provides innovative solutions as seen on ${hostname}. They focus on delivering high-value products to their target market.`,
         whatTheyDo: [
             "Offers a comprehensive platform for enterprise clients",
             "Leverages modern technology to solve complex problems",

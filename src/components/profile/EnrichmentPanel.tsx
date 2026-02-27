@@ -25,7 +25,7 @@ export function EnrichmentPanel({ companyId, website }: EnrichmentPanelProps) {
             const response = await fetch('/api/enrich', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ website })
+                body: JSON.stringify({ website, companyId })
             });
 
             if (!response.ok) throw new Error('Enrichment failed');
