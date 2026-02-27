@@ -81,4 +81,4 @@ The project is optimized for deployment on [Vercel](https://vercel.com). Simply 
 
 ---
 
-Built with ❤️ by [Shreyash Nair](https://github.com/shreyshNair)
+Built with ❤️ by [Shreysh Nair](https://github.com/shreyshNair)
